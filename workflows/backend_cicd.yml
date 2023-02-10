@@ -1,0 +1,116 @@
+name: onthemat-server-cicd-flow
+on:
+  push:
+    branches:
+      - "production"
+  workflow_dispatch:
+
+env:
+  DOCKER_REPO_NAME: ztellaw/onthemat-server
+  POSTGRES_DB: ci
+  POSTGRES_PASSWORD:
+  POSTGRES_USER: ci
+  POSTGRES_HOST: ci
+  POSTGRES_PORT: 5432
+  AWS_DEFAULT_REGION: ci
+  AWS_ACCESS_KEY_ID: ci
+  AWS_SECRET_ACCESS_KEY: ci
+  JWT_SECRET: ci
+  PAYPAL_CLIENT: ci
+  PAYPAL_SECRET: ci
+  OUTLOOK_AC: cii
+  OUTLOOK_PASS: ci
+  MONGO_USER: ci
+  MONGO_PASSWORD: ci
+  MONGO_DB: ci
+  S3_BUCKET_NAME: ci
+  S3_REGION: ci
+  NODE_ENV: ci
+  SERVER_HOST: 1.1.1.1
+  SERVER_USER: ci
+  SERVER_DIR: ci
+
+jobs:
+  test-and-build-server:
+    runs-on: ubuntu-latest
+    container: node:lts-alpine
+    services:
+      onthemat-db:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: ${{env.POSTGRES_DB}}
+          POSTGRES_USER: ${{env.POSTGRES_USER}}
+          POSTGRES_PASSWORD: ${{env.POSTGRES_PASSWORD}}
+        ports:
+          - 5432:5432
+
+    env:
+      PORT: 8080
+      POSTGRES_HOST: onthemat-db
+      POSTGRES_PORT: 5432
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install yarn deps
+        working-directory: back-end
+        run: |
+          yarn
+      - name: Build project
+        working-directory: back-end
+        run: |
+          yarn build
+      - name: Migrate database with knex
+        working-directory: back-end/dist
+        run: |
+          yarn knex migrate:latest --env ci
+      - name: archive built files
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: back-end/dist
+
+  build-and-deploy-docker:
+    needs: test-and-build-server
+    runs-on: ubuntu-latest
+    container: docker:20.10.21-alpine3.16
+    steps:
+      - uses: actions/checkout@v3
+      - name: restore built files server
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: back-end/dist
+
+      - name: Build docker image for server
+        working-directory: back-end
+        run: |
+          docker build -t onthemat-server:latest .
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Do Docker tag and push
+        working-directory: back-end
+        run: |
+          docker push ${{ env.DOCKER_REPO_NAME }}
+
+  ssh-ec2-and-compose-up:
+    needs: build-and-deploy-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Executing remote ssh
+        uses: appleboy/ssh-action@master
+        with:
+          host: 35.76.154.229
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          username: ${{ env.SERVER_USER }}
+          script: |
+            cd ${{ env.SERVER_DIR }}
+            sudo usermod -aG docker ${{ env.SERVER_USER }}
+            sudo service docker restart
+            sudo docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
+            sudo docker-compose pull
+            sudo docker-compose up -d && sudo docker ps

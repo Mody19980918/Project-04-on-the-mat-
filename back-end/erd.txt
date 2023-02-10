@@ -1,0 +1,209 @@
+# Visualize on https://erd.surge.sh
+# or https://quick-erd.surge.sh
+#
+# Relationship Types
+#  -    - one to one
+#  -<   - one to many
+#  >-   - many to one
+#  >-<  - many to many
+#  -0   - one to zero or one
+#  0-   - zero or one to one
+#  0-0  - zero or one to zero or one
+#  -0<  - one to zero or many
+#  >0-  - zero or many to one
+#
+////////////////////////////////////
+
+
+
+users
+-----
+id integer PK
+phone_number char(8) NULL
+email varchar(255) NULL unique
+first_name varchar(100) NULL
+last_name varchar(100) NULL
+password varchar(255) NULL
+gender varchar(10) NULL
+profile_pic varchar(255) NULL
+admin boolean NULL
+super_admin boolean NULL
+credit integer NULL
+birth_date date NULL
+verification_status varchar(25) NULL 
+verification_code integer NULL
+finished_quiz boolean NULL
+
+studio
+------
+id integer PK
+business_user_id integer FK >- users.id
+name varchar(255)
+address varchar(255)
+description varchar(1000)
+phone_number integer(8)
+email varchar(50)
+positions point NULL
+verification_status varchar(25) NULL 
+area varchar(255) NULL
+district varchar(255) NULL
+
+studio_area
+------------
+id integer PK
+area varchar(255)
+district varchar(255) 
+
+
+
+
+user_credit_event
+-----------
+id integer PK
+user_id  integer FK >- users.id 
+class_id FK integer >- classes.id
+event varchar(255)
+credit_change integer 
+create_date timestamp 
+
+user_classes_lesson
+------------
+id integer PK
+user_id FK >- users.id 
+classes_id FK >- classes_interval.id
+attendance varchar(50) NULL
+
+
+classes
+--------
+id integer PK
+name varchar(255)
+type varchar(255)
+start_time timestamp
+end_time timestamp 
+studio_id FK >- studio.id
+upper_limit integer 
+credits_needed integer
+create_date timestamp
+description varchar(255)
+teacher_id integer FK >- teachers.id
+
+classes_interval
+--------
+id integer
+classes_id FK >- classes.id
+date date
+state varchar(50) NULL
+
+teachers_class
+--------------
+id integer PK
+teachers_id FK >- teachers.id
+classes_id FK >- classes_interval.id
+
+
+class_reviews
+-------
+id integer PK
+comment varchar(2500)
+rating integer
+user_id FK >- users.id
+class_id FK >- classes.id
+
+
+
+studio_reviews
+-------------
+id integer PK
+comment varchar(2500)NULL
+rating integer NULL
+user_id FK >- users.id
+create_date date
+studio_id FK >- studio.id
+
+
+teachers
+--------
+id integer PK
+name varchar(100)
+descriptions varchar(3000) NULL
+rating decimal NULL
+studio_id FK >- studio.id
+
+
+payment_record
+--------------
+id integer PK
+user_id integer FK >- users.id
+amount decimal
+transaction_date timestamp
+create_date timestamp
+credit integer
+
+
+
+
+images
+-----
+id integer PK
+path varchar(255)
+class_id integer NULL
+studio_id integer NULL
+
+
+user_bookmark
+-------------
+id integer PK
+user_id FK >- users.id 
+teacher_id integer NULL
+studio_id integer NULL
+
+
+meta_classes
+------------
+id integer PK
+classes_id FK >- classes.id
+interval varchar(255) NULL
+
+
+chat_record
+------------
+id integer PK
+sender_id integer  FK >- users.id
+receiver_id integer FK >- users.id
+messages varchar(1000) NULL
+receive_status boolean NULL
+read_status boolean NULL
+sent_time timestamp NULL
+
+
+
+
+
+
+
+
+# zoom: 1.000
+# view: (0, 0)
+# studio (1306, 508)
+# studio_area (1534, 332)
+# user_credit_event (1755, 11)
+# user_classes_lesson (1531, 1074)
+# classes (58, 162)
+# classes_interval (655, 1042)
+# teachers_class (139, 1105)
+# class_reviews (1181, 41)
+# studio_reviews (768, 169)
+# teachers (967, 867)
+# payment_record (515, 76)
+# images (1823, 512)
+# user_bookmark (91, 564)
+# meta_classes (1784, 881)
+# users (723, 458)
+# chat_record (121, 860)
+# text-bg: #6495ed
+# text-color: #000000
+# diagram-bg: #c9bdf5
+# diagram-text: #000000
+# table-bg: #ffffff
+# table-text: #000000

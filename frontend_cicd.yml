@@ -1,0 +1,34 @@
+name: onthemat-server-cicd-flow
+on:
+  push:
+    branches:
+      - "production"
+  workflow_dispatch:
+
+env:
+  S3_BUCKET_NAME: frontend
+  S3_REGION: frontend
+
+jobs:
+  test-and-build-react:
+    runs-on: ubuntu-latest
+    container: node:lts-alpine
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install yarn deps
+        working-directory: frontend
+        run: yarn
+      - name: Build frondend project
+        working-directory: frontend
+        env:
+          VITE_PAYPAL_CLIENT: ""
+          REACT_APP_BACKEND_URL: ""
+          GENERATE_SOURCEMAP: false
+        run: yarn run build
+
+      - name: Archive react built files
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: frontend/dist
